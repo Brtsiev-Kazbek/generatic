@@ -1,7 +1,7 @@
-# generative-art-node
-Create generative art by using the canvas api and node js
+# Generatic
+
+Create unique images from layers!
 
 ## Dependencies
-`
-npm install canvas
-`
+
+`npm install canvas`

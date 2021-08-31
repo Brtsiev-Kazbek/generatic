@@ -128,4 +128,4 @@ fs.readFile('./output/metadata.json', (err, data) => {
     if (err) throw err;
 });
 
-startCreating(47);
+startCreating(1);

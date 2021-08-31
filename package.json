@@ -1,0 +1,30 @@
+{
+  "name": "generatic",
+  "version": "1.0.0",
+  "description": "Generate unique layer-based images by Nodejs for NFT",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node index.ts",
+    "serve": "ts-node-dev --respawn index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Brtsiev-Kazbek/generatic.git"
+  },
+  "author": "Kazbek Brtsiev",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Brtsiev-Kazbek/generatic/issues"
+  },
+  "homepage": "https://github.com/Brtsiev-Kazbek/generatic#readme",
+  "devDependencies": {
+    "@types/node": "^16.7.8",
+    "ts-node": "^10.2.1",
+    "ts-node-dev": "^1.1.8",
+    "typescript": "^4.4.2"
+  },
+  "dependencies": {
+    "canvas": "^2.8.0"
+  }
+}

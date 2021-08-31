@@ -3,78 +3,129 @@ import { createCanvas, loadImage } from 'canvas';
 import { layers, WIDTH, HEIGHT, Layer } from './layers/config';
 const canvas = createCanvas(WIDTH, HEIGHT);
 const ctx = canvas.getContext('2d');
-const edition = 10;
+const editionSize = 1;
 
-let metadata: any[] = [];
-let attributes: any[] = [];
-let hash: any[] = [];
-let decodedHash: any[] = [];
+let metadataList: any[] = [];
+let attributesList: any[] = [];
+let dnaList: any[] = [];
 
-async function saveLayer(_canvas: any, _edition: number) {
-    fs.writeFileSync(`./output/${_edition}.png`, _canvas.toBuffer('image/png'));
-    console.log('saved');
+async function saveImage(_edition: number) {
+    fs.writeFileSync(`./output/${_edition}.png`, canvas.toBuffer('image/png'));
 }
 
-function addMetadata(_edition: number): void {
+function signImg(_sig: string) {
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 30pt Courier';
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
+    ctx.fillText(_sig, 40, 40);
+}
+
+function addMetadata(_dna: number[], _edition: number): void {
     let dateTime = Date.now();
     let tempMetadata = {
-        hash: hash.join(''),
-        decodedHash: decodedHash,
+        dna: _dna.join(''),
         edition: _edition,
         date: dateTime,
-        attributes: attributes,
+        attributes: attributesList,
     };
-    metadata.push(tempMetadata);
-    attributes = [];
-    hash = [];
-    decodedHash = [];
+    metadataList.push(tempMetadata);
+    dnaList.push(_dna);
+    attributesList = [];
 }
 
-function addAttributes(_element: any, _layer: any): void {
-    let tempAttr = {
-        id: _element.id,
-        layer: _layer.name,
-        name: _element.name,
-        rarity: _element.rarity,
-    };
-
-    attributes.push(tempAttr);
-    hash.push(_layer.id);
-    hash.push(_element.id);
-    decodedHash.push({ [_layer.id]: _element.id });
-}
-
-async function drawLayer(_layer: Layer, _edition: any): Promise<void> {
-    let element = _layer.elements[Math.floor(Math.random() * _layer.elements.length)];
-    addAttributes(element, _layer);
-
-    const webPath = `${_layer.location}${element.fileName}`;
-
-    const image = await loadImage(webPath);
-    ctx.drawImage(
-        image,
-        _layer.position.x,
-        _layer.position.y,
-        _layer.size.width,
-        _layer.size.height,
-    );
-    console.log(
-        `Created a {${_layer.name}} layer and choose element {${element.name}} with rarity count {${element.rarity}}`,
-    );
-    saveLayer(canvas, _edition);
-}
-
-// drawLayer();
-
-for (let i = 0; i < edition; i++) {
-    layers.forEach((layer) => {
-        drawLayer(layer, i);
+function addAttributes(_element: any): void {
+    let selectedElement = _element.selectedElement;
+    attributesList.push({
+        name: selectedElement.name,
+        rarity: selectedElement.rarity,
     });
-    addMetadata(i);
 }
 
-// console.log(layers);
+function loadLayerImg(_layer: any): Promise<any> {
+    return new Promise(async (resolve, reject) => {
+        const image = await loadImage(`${_layer.location}${_layer.selectedElement.fileName}`);
+        resolve({ layer: _layer, loadedImage: image });
+    });
+}
+
+function drawElement(_element: any) {
+    ctx.drawImage(
+        _element.loadedImage,
+        _element.layer.position.x,
+        _element.layer.position.y,
+        _element.layer.size.width,
+        _element.layer.size.height,
+    );
+    addAttributes(_element.layer);
+}
+
+function constructLayerToDna(_dna: number[], _layers: Layer[]) {
+    let mappedDnaToLayers = _layers.map((layer: Layer, index: number) => {
+        let selectedElement = layer.elements[_dna[index]];
+        return {
+            location: layer.location,
+            elements: layer.elements,
+            position: layer.position,
+            size: layer.size,
+            selectedElement: selectedElement,
+        };
+    });
+    return mappedDnaToLayers;
+}
+
+function isDnaUnique(_DnaList: any[], _dna: number[]): boolean {
+    let foundDna = _DnaList.find((el) => el.join('') === _dna.join(''));
+    return foundDna == undefined ? true : false;
+}
+
+function createDna(_layers: Layer[]) {
+    let randNum: any[] = [];
+    _layers.forEach((layer) => {
+        let num = Math.floor(Math.random() * layer.elements.length);
+        randNum.push(num);
+    });
+    return randNum;
+}
+
+function writeMetaData() {
+    fs.writeFileSync('./output/metadata.json', JSON.stringify(metadataList));
+}
+
+async function startCreating(_edition: number): Promise<void> {
+    let editionCount: number = 0;
+    while (editionCount < _edition) {
+        let newDna = createDna(layers);
+        if (isDnaUnique(dnaList, newDna)) {
+            let result = constructLayerToDna(newDna, layers);
+            let loadedElements: any[] = [];
+
+            result.forEach((layer) => {
+                loadedElements.push(loadLayerImg(layer));
+            });
+
+            await Promise.all(loadedElements).then((elementArray) => {
+                elementArray.forEach((el) => {
+                    drawElement(el);
+                });
+                signImg(`#${editionCount}`);
+                saveImage(editionCount);
+                addMetadata(newDna, editionCount);
+                console.log(metadataList);
+
+                console.log(`Created edition: ${editionCount} with dna: ${newDna}`);
+            });
+
+            editionCount++;
+        } else {
+            console.log('DNA exists!');
+        }
+    }
+    writeMetaData();
+}
+
 fs.readFile('./output/metadata.json', (err, data) => {
-    // if (err) throw err;
-    fs.writeFileSync('./output/metadata.json', JSON.stringify(metadata, null, '\t'));
+    if (err) throw err;
 });
+
+startCreating(47);

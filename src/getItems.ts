@@ -1,5 +1,5 @@
-import { Element } from '../layers/config';
 import fs from 'fs';
+import { Element } from './types/element.type';
 const rarity = [
     { key: '_n', val: 'original' },
     { key: '_r', val: 'rare' },
